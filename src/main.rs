@@ -1,5 +1,5 @@
 fn main() {
-    println!("Hello, rcli!");
+    println!("Hello, rust!");
 }
 
 #[cfg(test)]
