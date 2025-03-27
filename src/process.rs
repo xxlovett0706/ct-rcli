@@ -1,6 +1,7 @@
-use csv::Reader;
 use serde::{Deserialize, Serialize};
 use std::fs;
+
+use crate::opts::OutputFormat;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -14,16 +15,28 @@ pub struct Player {
     kit: u8,
 }
 
-pub fn process_csv(input: &str, output: &str) -> anyhow::Result<()> {
-    let mut reader = Reader::from_path(input)?;
+pub fn process_csv(input: &str, output: String, format: OutputFormat) -> anyhow::Result<()> {
+    let mut reader = csv::Reader::from_path(input)?;
     let mut ret = Vec::with_capacity(128);
-    for result in reader.deserialize() {
-        let record: Player = result?;
-        ret.push(record);
-    }
-    let json = serde_json::to_string_pretty(&ret)?;
-    fs::write(output, json)?;
+    let headers = reader.headers()?.clone();
 
+    for result in reader.records() {
+        let record = result?;
+
+        let json_value = headers
+            .iter()
+            .zip(record.iter())
+            .collect::<serde_json::Value>();
+
+        ret.push(json_value);
+    }
+
+    let content = match format {
+        OutputFormat::Json => serde_json::to_string_pretty(&ret)?,
+        OutputFormat::Yaml => serde_yaml::to_string(&ret)?,
+    };
+
+    fs::write(output, content)?;
     Ok(())
 }
 
@@ -46,19 +59,22 @@ mod tests {
         File::create(test_csv)?.write_all(csv_content.as_bytes())?;
 
         // Run the process_csv function
-        process_csv(test_csv, test_json)?;
+        process_csv(test_csv, test_json.to_string(), OutputFormat::Json)?;
 
         // Read and verify the output JSON
         let json_content = fs::read_to_string(test_json)?;
-        let players: Vec<Player> = serde_json::from_str(&json_content)?;
+        let players: Vec<serde_json::Value> = serde_json::from_str(&json_content)?;
 
         assert_eq!(players.len(), 2);
-        assert_eq!(players[0].name, "John Doe");
-        assert_eq!(players[0].position, "Forward");
-        assert_eq!(players[0].kit, 10);
-        assert_eq!(players[1].name, "Jane Smith");
-        assert_eq!(players[1].position, "Defender");
-        assert_eq!(players[1].kit, 5);
+
+        // 使用新的方式验证JSON值
+        assert_eq!(players[0]["Name"].as_str().unwrap(), "John Doe");
+        assert_eq!(players[0]["Position"].as_str().unwrap(), "Forward");
+        assert_eq!(players[0]["Kit Number"].as_str().unwrap(), "10");
+
+        assert_eq!(players[1]["Name"].as_str().unwrap(), "Jane Smith");
+        assert_eq!(players[1]["Position"].as_str().unwrap(), "Defender");
+        assert_eq!(players[1]["Kit Number"].as_str().unwrap(), "5");
 
         // Clean up test files
         fs::remove_file(test_csv)?;
