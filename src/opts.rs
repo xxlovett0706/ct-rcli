@@ -16,18 +16,8 @@ pub struct Opts {
 pub enum SubCommand {
     #[command(name = "csv", about = "Show CSV, or Convert CSV to other formats")]
     Csv(CsvOpts),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum OutputFormat {
-    Json,
-    Yaml,
-}
-
-impl Display for OutputFormat {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Into::<&str>::into(*self))
-    }
+    #[command(name = "genpass", about = "Generate a random password")]
+    Genpass(GenpassOpts),
 }
 
 #[derive(Debug, Parser)]
@@ -44,16 +34,16 @@ pub struct CsvOpts {
     pub header: bool,
 }
 
-fn verify_input_file(filename: &str) -> Result<String, String> {
-    if Path::new(filename).exists() {
-        Ok(filename.to_string())
-    } else {
-        Err("File does not exist".into())
-    }
+#[derive(Debug, Clone, Copy)]
+pub enum OutputFormat {
+    Json,
+    Yaml,
 }
 
-fn parse_output_format(format: &str) -> Result<OutputFormat, anyhow::Error> {
-    format.parse()
+impl Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", Into::<&str>::into(*self))
+    }
 }
 
 impl From<OutputFormat> for &'static str {
@@ -75,4 +65,30 @@ impl FromStr for OutputFormat {
             _ => Err(anyhow::anyhow!("Invalid output format")),
         }
     }
+}
+
+fn verify_input_file(filename: &str) -> Result<String, String> {
+    if Path::new(filename).exists() {
+        Ok(filename.to_string())
+    } else {
+        Err("File does not exist".into())
+    }
+}
+
+fn parse_output_format(format: &str) -> Result<OutputFormat, anyhow::Error> {
+    format.parse()
+}
+
+#[derive(Debug, Parser)]
+pub struct GenpassOpts {
+    #[arg(short, long, default_value_t = 16)]
+    pub length: u8,
+    #[arg(long, default_value_t = true)]
+    pub uppercase: bool,
+    #[arg(long, default_value_t = true)]
+    pub lowercase: bool,
+    #[arg(long, default_value_t = true)]
+    pub numbers: bool,
+    #[arg(long, default_value_t = true)]
+    pub symbols: bool,
 }
