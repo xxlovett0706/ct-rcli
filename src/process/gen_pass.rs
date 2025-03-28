@@ -62,7 +62,15 @@ pub fn process_genpass(
 
     password.shuffle(&mut rng);
 
-    String::from_utf8(password).expect("Password contains valid UTF-8")
+    let password = String::from_utf8(password).expect("Password contains valid UTF-8");
+
+    // output password strength on stderr
+    eprintln!(
+        "Password strength: {}",
+        zxcvbn::zxcvbn(&password, &[]).score()
+    );
+
+    password
 
     // password
 }
