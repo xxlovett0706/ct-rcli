@@ -1,4 +1,4 @@
-use rand::seq::{IndexedRandom, SliceRandom};
+use rand::seq::SliceRandom;
 
 const UPPERCASE: &[u8] = b"ABCDEFGHIJKLMNPQRSTUVWXYZ";
 const LOWERCASE: &[u8] = b"abcdefghijklmnpqrstuvwxyz";
@@ -11,8 +11,8 @@ pub fn process_genpass(
     lowercase: bool,
     numbers: bool,
     symbols: bool,
-) -> String {
-    let mut rng = rand::rng();
+) -> anyhow::Result<String> {
+    let mut rng = rand::thread_rng();
     let mut password = Vec::new();
     let mut chars = Vec::new();
 
@@ -70,7 +70,5 @@ pub fn process_genpass(
         zxcvbn::zxcvbn(&password, &[]).score()
     );
 
-    password
-
-    // password
+    Ok(password)
 }
