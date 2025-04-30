@@ -1,8 +1,6 @@
-use std::{fmt, path::PathBuf, str::FromStr};
-
-use clap::{Parser, Subcommand};
-
 use super::{verify_file, verify_path};
+use clap::{Parser, Subcommand};
+use std::{fmt, path::PathBuf, str::FromStr};
 
 #[derive(Debug, Subcommand)]
 pub enum TextSubCommand {
